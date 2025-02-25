@@ -1,0 +1,7 @@
+algorithm (blind, non-dl):
+Wen, F., Ying, R., Liu, P., & Truong, T. K. (2019). Blind image deblurring using patch-wise minimal pixels regularization. arXiv preprint arXiv:1906.06642.
+https://arxiv.org/abs/1906.06642v3
+
+dataset:
+Köhler, R., Hirsch, M., Mohler, B., Schölkopf, B., & Harmeling, S. (2012). Recording and playback of camera shake: Benchmarking blind deconvolution with a real-world database. In Computer Vision–ECCV 2012: 12th European Conference on Computer Vision, Florence, Italy, October 7-13, 2012, Proceedings, Part VII 12 (pp. 27-40). Springer Berlin Heidelberg.
+https://webdav.tuebingen.mpg.de/pixel/benchmark4camerashake/
