@@ -1,5 +1,5 @@
 import { styled } from "styled-components";
-import { FormEvent, ReactNode } from "react";
+import { FormEvent, ReactNode, MouseEvent } from "react";
 
 const Button = styled.button`
   margin: 1.5rem auto 0;
@@ -29,11 +29,27 @@ const ButtonContainer = styled.div`
   margin-top: 1.5rem;
 `;
 
+// Download button styles
+const DownloadButtonElement = styled(Button)`
+  display: inline-flex;
+  align-items: center;
+  
+  svg {
+    margin-right: 0.5rem;
+  }
+`;
+
 interface SubmitButtonProps {
   photoCount: number;
   onSubmit: (e: FormEvent) => void;
   disabled?: boolean;
-  children?: ReactNode; // Add support for children
+  children?: ReactNode;
+}
+
+interface DownloadButtonProps {
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void;
+  disabled?: boolean;
+  children?: ReactNode;
 }
 
 export const SubmitButton = ({ 
@@ -51,6 +67,29 @@ export const SubmitButton = ({
       >
         {children || `Upload ${photoCount} Photo${photoCount !== 1 ? 's' : ''}`}
       </Button>
+    </ButtonContainer>
+  );
+};
+
+export const DownloadButton = ({
+  onClick,
+  disabled = false,
+  children
+}: DownloadButtonProps) => {
+  return (
+    <ButtonContainer>
+      <DownloadButtonElement
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        {children || "Download All"}
+      </DownloadButtonElement>
     </ButtonContainer>
   );
 };
