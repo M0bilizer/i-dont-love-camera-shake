@@ -1,2 +1,15 @@
-https://github.com/megvii-research/NAFNet?tab=readme-ov-file
-https://github.com/Jishnu8/DBlur-An-Image-Deblurring-Toolkit
+# algorithm
+
+To install dependencies:
+
+```bash
+bun install
+```
+
+To run:
+
+```bash
+bun run index.ts
+```
+
+This project was created using `bun init` in bun v1.1.43. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
