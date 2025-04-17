@@ -6,6 +6,7 @@ import { Photo } from "./types";
 import validatePhotos from "./utils/validatePhotos";
 import CustomError from "./types/errors";
 import { uploadPhotoReceipt, uploadPhotos } from "./utils/uploadPhotos";
+import attemptDownload from "./utils/downloadPhotos";
 
 const Container = styled.div`
   padding: 2rem;
@@ -52,7 +53,15 @@ function App() {
     setIsUploading(true);
     setUploadProgress(0);
 
-    await uploadPhotos(photos)
+    const receipt = await uploadPhotos(photos)
+    receipt[0]
+      .onSuccess((value) => {
+        attemptDownload(value.futureImageUrl);
+    })
+      .onFailure(() => {
+        console.error("oh well")
+      })
+
   }, [photos])
 
   return (
