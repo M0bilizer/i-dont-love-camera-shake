@@ -1,6 +1,6 @@
 import { Photo } from "../types";
 import CustomError from "../types/errors";
-import { DataResult } from "../types/result";
+import Either from "../types/either";
 
 /** 
     This const should be an env variable but it's not really possible
@@ -16,82 +16,96 @@ type GetUploadUrlReceipt = {
     futureImageUrl: string
 }
 
-const getUploadUrl = async(): Promise<DataResult<GetUploadUrlReceipt>> => {
+const getUploadUrl = async(photo: Photo): Promise<Either<GetUploadUrlReceipt, CustomError[]>> => {
     const errors: CustomError[] = [];
     try {
         const response = await fetch(API_ENDPOINT, {
-            method: 'GET',
+            method: 'POST',
+            mode: 'cors',
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ fileType: photo.file.type })
         });
 
         if (!response.ok) {
             errors.push(new CustomError("TODO: couldn't reach"))
         }
-
         const data: GetUploadUrlReceipt = await response.json();
-        return new DataResult(data, errors)
+        return Either.success(data)
     } catch (error) {
         console.error('Error uploading photos:', error);
-        return new DataResult<GetUploadUrlReceipt>(null, errors);
+        return Either.failure(errors);
     }
 }
 
-const uploadPhoto = async (uploadUrl: string, photo: Photo): Promise<DataResult<null>> => {
+const uploadPhoto = async (uploadUrl: string, photo: Photo): Promise<Either<true, CustomError[]>> => {
     const errors: CustomError[] = [];
     try {
         const response = await fetch(uploadUrl, {
             method: 'PUT',
-            body: photo.file,
             headers: {
-                'Content-Type': photo.file.type,
+            'Content-Type': photo.file.type,
             },
+            body: photo.file
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            errors.push(new CustomError(`Failed to upload ${photo.file.name}: ${errorText}`));
+            errors.push(new CustomError(`Failed to upload ${photo.file.name}: ${errorText}`))
+            return Either.failure(errors);
+        } else {
+            return Either.success(true);
         }
     } catch (error) {
-        new CustomError(`Failed to upload ${photo.file.name}: ${error}`);
-    } finally {
-        return new DataResult(null, errors)
+        errors.push(new CustomError(`Failed to upload ${photo.file.name}: ${error}`))
+        return Either.failure(errors);
     }
 };
 
-type SuccessUpload = {
-    isSuccess: true;
+type uploadPhotoReceipt = {
+    imageId: string
     futureImageUrl: string
+    timestamp: Date
 }
 
-type FailureUpload = {
-    isSuccess: false;
-    errors: CustomError[]
-}
-
-type uploadPhotosReceipt = SuccessUpload | FailureUpload
-
-const uploadPhotos = async (photos: Photo[]): Promise<uploadPhotosReceipt[]> => {
-    const uploadPhotosReceipts: uploadPhotosReceipt[] = [];
+const uploadPhotos = async (photos: Photo[]): Promise<Either<uploadPhotoReceipt, CustomError[]>[]> => {
+    const EitherArray: Either<uploadPhotoReceipt, CustomError[]>[] = [];
     for (const photo of photos) {
-        const uploadUrlResult = await getUploadUrl();
-        if (uploadUrlResult.hasErrors()) {
-            console.error('Errors occurred while getting upload URL:', uploadUrlResult.getErrors());
-            uploadPhotosReceipts.push({isSuccess: false, errors: uploadUrlResult.getErrors()});
-            break;
-        }
+        let getUploadUrlReceipt: GetUploadUrlReceipt | undefined;
+        let uploadIsSuccess: true | undefined;
 
-        const uploadUrlReceipt = uploadUrlResult.getData();
-
-        const result = await uploadPhoto(uploadUrlReceipt.uploadUrl, photo);
-        if (result.hasErrors()) {
-            uploadPhotosReceipts.push({isSuccess: false,errors: result.getErrors()});
+        const getUploadUrlResult = await getUploadUrl(photo);
+        getUploadUrlResult
+            .onSuccess((value) => {
+                getUploadUrlReceipt = value
+            })
+            .onFailure((value) => {
+                EitherArray.push(Either.failure(value))
+            })
+        if (!getUploadUrlReceipt)
             break;
-        }
-        uploadPhotosReceipts.push({isSuccess: true, futureImageUrl: uploadUrlReceipt.futureImageUrl})
+
+        const uploadUrl = getUploadUrlReceipt.uploadUrl;
+        const uploadPhotoResult = await uploadPhoto(uploadUrl, photo);   
+        uploadPhotoResult
+            .onSuccess((value) => {
+                uploadIsSuccess = value;
+            })
+            .onFailure((value) => {
+                EitherArray.push(Either.failure(value))
+            })
+        if (!uploadIsSuccess)
+            break;
+
+        EitherArray.push(
+            Either.success(
+                {...getUploadUrlReceipt, timestamp: new Date()}
+            )
+        )
     }
-    return uploadPhotosReceipts;
+    return EitherArray;
 };
 
 export {uploadPhotos}
+export type {uploadPhotoReceipt};
