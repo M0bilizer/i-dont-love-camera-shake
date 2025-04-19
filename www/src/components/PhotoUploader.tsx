@@ -1,196 +1,90 @@
-import { styled } from "styled-components";
-import { useState, useRef, ChangeEvent, DragEvent } from "react";
-import PhotoItem from "./PhotoItem";
-import { DropForm } from "./DropForm";
-import { Photo } from "../types";
+import React, { ChangeEvent, DragEvent } from 'react';
+import styled from 'styled-components';
+import CustomError from '../types/errors';
+import { validateForUpload } from '../utils/validate';
+import { useFileStore } from '../store/photos';
 
-// Define allowed file types
-const ALLOWED_FILE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
-const ALLOWED_FILE_EXTENSIONS = [".jpg", ".jpeg", ".png"];
-
-const PhotoUploaderContainer = styled.form`
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  padding: 2rem;
-  transition: all 0.3s ease;
-  margin-bottom: 1.5rem;
-  
-  &.drag-active {
-    border-color: #4f46e5;
-    background-color: rgba(79, 70, 229, 0.1);
-  }
-`;
-
-const PhotosGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
-`;
-
-const AddMoreButton = styled.button`
-  background-color: rgba(79, 70, 229, 0.1);
-  color: #4f46e5;
-  border: 1px dashed #4f46e5;
-  border-radius: 8px;
-  padding: 1rem;
+const Container = styled.div`
+  text-align: center;
   cursor: pointer;
+  padding: 2rem;
+  margin-bottom: 0;
+  min-height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 150px;
-  font-size: 2rem;
-  
-  &:hover {
-    background-color: rgba(79, 70, 229, 0.2);
-  }
+  border: 2px dashed #ccc;
+  width: 300px;
+  height: 200px;
 `;
 
-const ErrorMessage = styled.div`
-  color: #ef4444;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
+const ErrorBox = styled.div`
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+  color: #721c24;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
 `;
 
-interface PhotoUploaderProps {
-  onPhotosChange: (photos: Photo[]) => void;
-  photos: Photo[];
-}
+const ImageUploadBox: React.FC = () => {
+  const { addFiles } = useFileStore();
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-const PhotoUploader = ({ onPhotosChange, photos }: PhotoUploaderProps) => {
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDragOver = (e: DragEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleErrors = (errors: CustomError[]) => {
+    const errorMessages = errors.map((it) => it.message);
+    setErrorMessage(errorMessages.join("\n"));
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setError(null);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const invalidFiles = Array.from(e.dataTransfer.files).filter(
-        file => !ALLOWED_FILE_TYPES.includes(file.type)
-      );
-      
-      if (invalidFiles.length > 0) {
-        setError(`Only JPG, JPEG, and PNG files are allowed.`);
-        return;
-      }
-      
-      handleFiles(e.dataTransfer.files);
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    const { validFiles, errors } = validateForUpload(droppedFiles);
+    addFiles(validFiles);
+    if (errors.length > 0) {
+      handleErrors(errors);
+    } else {
+      setErrorMessage(null);
     }
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    if (e.target.files && e.target.files.length > 0) {
-      handleFiles(e.target.files);
+  const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    const { validFiles, errors } = validateForUpload(selectedFiles);
+    addFiles(validFiles);
+    if (errors.length > 0) {
+      handleErrors(errors);
+    } else {
+      setErrorMessage(null);
     }
   };
 
-  const validateFileType = (file: File): boolean => {
-    // Check MIME type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return false;
-    }
-    
-    // Additional check on file extension
-    const fileName = file.name.toLowerCase();
-    return ALLOWED_FILE_EXTENSIONS.some(ext => fileName.endsWith(ext));
+  const handleClick = () => {
+    document.getElementById('fileInput')?.click();
   };
 
-  const handleFiles = (files: FileList) => {
-    const newPhotos = [...photos];
-    let invalidFilesFound = false;
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      
-      if (!validateFileType(file)) {
-        invalidFilesFound = true;
-        continue;
-      }
-      
-      const reader = new FileReader();
-      
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        if (e.target && e.target.result) {
-          newPhotos.push({
-            id: Date.now() + i,
-            url: e.target.result as string,
-            file: file
-          });
-          onPhotosChange([...newPhotos]);
-        }
-      };
-      
-      reader.readAsDataURL(file);
-    }
-    
-    if (invalidFilesFound) {
-      setError("Some files were skipped. Only JPG, JPEG, and PNG files are allowed.");
-    }
-  };
-
-  const removePhoto = (id: number) => {
-    onPhotosChange(photos.filter(photo => photo.id !== id));
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
   };
 
   return (
-    <PhotoUploaderContainer 
-      className={isDragging ? "drag-active" : ""}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <DropForm
-        hasPhotos={photos.length > 0}
-        fileInputRef={fileInputRef}
-      >
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleFileChange} 
-          multiple 
-          accept="image/jpeg,image/jpg,image/png" // HTML5 accept attribute
-          style={{ display: 'none' }}
-        />
-        <p>Drag & drop photos here or click to select</p>
-        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#6b7280' }}>
-          Supported formats: JPG, JPEG, PNG
-        </p>
-      </DropForm>
-
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-
-      {photos.length > 0 && (
-        <PhotosGrid>
-          {photos.map((photo) => (
-            <PhotoItem 
-              key={photo.id}
-              photo={photo}
-              onDelete={removePhoto}
-            />
-          ))}
-          
-          <AddMoreButton 
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            +
-          </AddMoreButton>
-        </PhotosGrid>
-      )}
-    </PhotoUploaderContainer>
+    <div className="flex justify-center items-center">
+      <div className="flex flex-col gap-2 justify-center items-center">
+        {errorMessage && <ErrorBox>{errorMessage}</ErrorBox>}
+        <Container onClick={handleClick} onDrop={handleDrop} onDragOver={handleDragOver}>
+          <p>Drag & Drop images here or click to select files</p>
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+            multiple
+          />
+        </Container>
+      </div>
+    </div>
   );
 };
 
-export default PhotoUploader;
+export default ImageUploadBox;
