@@ -20,4 +20,7 @@ Deployment Testing:
             ![alt text](image-3.png)
             - ran with and without IAM role "LabRole" 
             - event trace availablel in AWS_TEST_DEPLOYMENT\event_trace\event_history_test_deploy_2025-3-4-12-30-50.json
-    
+            2025-04-20 SUCCESS 
+            - used personal AWS Account 
+            - Demo site up and running from cloud formation stack  
+            ![alt text](image-4.png)
