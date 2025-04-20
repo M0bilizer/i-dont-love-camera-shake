@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Either, failure, success } from "../types/either";
 import CustomError from "../types/errors";
 import { handleUpload, uploadReceipt } from "../utils/uploadPhotos";
-import checkImageAvailability from "../utils/downloadPhotos";
+import { checkImageAvailability } from "../utils/downloadPhotos";
 
 type Photo = {
   id: number;
@@ -12,10 +12,10 @@ type Photo = {
   uploadReceipt: uploadReceipt | null;
 };
 
-interface PhotoState {
+type PhotoState = {
   photos: Photo[];
   addFiles: (files: File[]) => void;
-}
+};
 
 //This only exist to shut ESLint up
 type SetPhotoState = {
@@ -91,7 +91,11 @@ const usePhotoStore = create<PhotoState>((set) => ({
   addFiles: (files) => addFiles(files)(set),
 }));
 
-//Helper
+/*
+ * █░█ █▀▀ █░░ █▀█ █▀▀ █▀█   █▀▀ █░█ █▄░█ █▀▀ ▀█▀ █ █▀█ █▄░█ █▀
+ * █▀█ ██▄ █▄▄ █▀▀ ██▄ █▀▄   █▀░ █▄█ █░▀█ █▄▄ ░█░ █ █▄█ █░▀█ ▄█
+ **/
+
 const generateId = (): number => {
   const currentPhotos = usePhotoStore.getState().photos;
   let newId = currentPhotos.length;
@@ -132,6 +136,19 @@ const setPhotoState = (
           }
         : photo,
     ),
+  });
+
+  return success(true);
+};
+
+const removePhoto = (id: number): Either<true, CustomError> => {
+  const { photos } = usePhotoStore.getState();
+  if (!photos.some((p) => p.id === id)) {
+    return failure(new CustomError("Cannot find file!"));
+  }
+
+  usePhotoStore.setState({
+    photos: photos.filter((photo) => photo.id !== id),
   });
 
   return success(true);
