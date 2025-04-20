@@ -10,7 +10,8 @@ const FileList: React.FC = () => {
       <ul>
         {photos.map((photo, index) => (
           <li key={index}>
-            id:{photo.id} state:{photo.state} {photo.message} {photo.uploadReceipt?.futureImageUrl}
+            id:{photo.id} state:{photo.state} {photo.message}{" "}
+            {photo.uploadReceipt?.futureImageUrl}
           </li>
         ))}
       </ul>
