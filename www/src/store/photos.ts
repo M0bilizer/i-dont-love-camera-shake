@@ -1,7 +1,8 @@
-import { create, StateCreator } from "zustand";
+import { create } from "zustand";
 import { Either, failure, success } from "../types/either";
 import CustomError from "../types/errors";
 import { handleUpload, uploadReceipt } from "../utils/uploadPhotos";
+import { checkImageAvailability } from "../utils/downloadPhotos";
 
 type Photo = {
   id: number;
@@ -11,16 +12,25 @@ type Photo = {
   uploadReceipt: uploadReceipt | null;
 };
 
-interface PhotoState {
+type PhotoState = {
   photos: Photo[];
   addFiles: (files: File[]) => void;
-}
+};
 
 //This only exist to shut ESLint up
 type SetPhotoState = {
-  (partial: PhotoState | Partial<PhotoState> | ((state: PhotoState) => PhotoState | Partial<PhotoState>), replace?: false): void;
-  (state: PhotoState | ((state: PhotoState) => PhotoState), replace: true): void;
-}
+  (
+    partial:
+      | PhotoState
+      | Partial<PhotoState>
+      | ((state: PhotoState) => PhotoState | Partial<PhotoState>),
+    replace?: false,
+  ): void;
+  (
+    state: PhotoState | ((state: PhotoState) => PhotoState),
+    replace: true,
+  ): void;
+};
 
 const addFiles = (files: File[]) => {
   return (set: SetPhotoState): void => {
@@ -32,24 +42,44 @@ const addFiles = (files: File[]) => {
         state: "uploading",
         message: null,
         uploadReceipt: null,
-      }
+      };
       photos.push(photo);
       set((state: PhotoState) => ({ photos: [...state.photos, photo] }));
-    })
+    });
 
     photos.forEach((photo) => {
       console.log(`starting ${photo.id}`);
       const processPhoto = async () => {
-        const result = await handleUpload(photo);
-        if (result.isSuccess()) {
+        let uploadReceipt: uploadReceipt;
+        const uploadResult = await handleUpload(photo);
+        if (uploadResult.isSuccess()) {
           console.log(`uploading ${photo.id} is success!`);
-          setPhotoState(photo.id, "processing", null, result.value);
+          uploadReceipt = uploadResult.value;
+          setPhotoState(photo.id, "processing", null, uploadResult.value);
         } else {
-          console.log(`uploading ${photo.id} failed, ${result.error.message}`);
-          setPhotoState(photo.id, "error", result.error.message);
+          console.log(
+            `uploading ${photo.id} failed, ${uploadResult.error.message}`,
+          );
+          setPhotoState(photo.id, "error", uploadResult.error.message);
+          return;
         }
 
-        console.log(`now we're polling for download ${photo.id}`)
+        console.log(`now we're polling for download ${photo.id}`);
+        const checkImageAvailabilityResult = await checkImageAvailability(
+          uploadReceipt.futureImageUrl,
+        );
+        if (checkImageAvailabilityResult.isSuccess()) {
+          console.log(`${photo.id} is ready to download`);
+          setPhotoState(photo.id, "ready");
+        } else {
+          console.log(`${photo.id} couldn't be processed!`);
+          setPhotoState(
+            photo.id,
+            "error",
+            checkImageAvailabilityResult.error.message,
+          );
+        }
+        return;
       };
       processPhoto();
     });
@@ -61,7 +91,11 @@ const usePhotoStore = create<PhotoState>((set) => ({
   addFiles: (files) => addFiles(files)(set),
 }));
 
-//Helper
+/*
+ * █░█ █▀▀ █░░ █▀█ █▀▀ █▀█   █▀▀ █░█ █▄░█ █▀▀ ▀█▀ █ █▀█ █▄░█ █▀
+ * █▀█ ██▄ █▄▄ █▀▀ ██▄ █▀▄   █▀░ █▄█ █░▀█ █▄▄ ░█░ █ █▄█ █░▀█ ▄█
+ **/
+
 const generateId = (): number => {
   const currentPhotos = usePhotoStore.getState().photos;
   let newId = currentPhotos.length;
@@ -102,6 +136,19 @@ const setPhotoState = (
           }
         : photo,
     ),
+  });
+
+  return success(true);
+};
+
+const removePhoto = (id: number): Either<true, CustomError> => {
+  const { photos } = usePhotoStore.getState();
+  if (!photos.some((p) => p.id === id)) {
+    return failure(new CustomError("Cannot find file!"));
+  }
+
+  usePhotoStore.setState({
+    photos: photos.filter((photo) => photo.id !== id),
   });
 
   return success(true);
