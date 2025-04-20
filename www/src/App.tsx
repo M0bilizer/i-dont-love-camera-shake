@@ -10,8 +10,8 @@ function App() {
   return (
     <Container className="max-w-full max-h-full">
       <Container>
-        <PhotoUploader/>
-        <FileList/>
+        <PhotoUploader />
+        <FileList />
       </Container>
     </Container>
   );

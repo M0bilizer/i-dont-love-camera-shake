@@ -11,11 +11,11 @@ const Button = styled.button`
   cursor: pointer;
   font-weight: 500;
   display: block;
-  
+
   &:hover {
     background-color: #4338ca;
   }
-  
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -33,7 +33,7 @@ const ButtonContainer = styled.div`
 const DownloadButtonElement = styled(Button)`
   display: inline-flex;
   align-items: center;
-  
+
   svg {
     margin-right: 0.5rem;
   }
@@ -52,20 +52,16 @@ interface DownloadButtonProps {
   children?: ReactNode;
 }
 
-export const SubmitButton = ({ 
-  photoCount, 
-  onSubmit, 
+export const SubmitButton = ({
+  photoCount,
+  onSubmit,
   disabled = false,
-  children 
+  children,
 }: SubmitButtonProps) => {
   return (
     <ButtonContainer>
-      <Button 
-        type="button"
-        onClick={onSubmit}
-        disabled={disabled}
-      >
-        {children || `Upload ${photoCount} Photo${photoCount !== 1 ? 's' : ''}`}
+      <Button type="button" onClick={onSubmit} disabled={disabled}>
+        {children || `Upload ${photoCount} Photo${photoCount !== 1 ? "s" : ""}`}
       </Button>
     </ButtonContainer>
   );
@@ -74,7 +70,7 @@ export const SubmitButton = ({
 export const DownloadButton = ({
   onClick,
   disabled = false,
-  children
+  children,
 }: DownloadButtonProps) => {
   return (
     <ButtonContainer>
@@ -83,7 +79,17 @@ export const DownloadButton = ({
         onClick={onClick}
         disabled={disabled}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>

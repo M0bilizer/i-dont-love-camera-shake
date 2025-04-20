@@ -7,87 +7,98 @@ import { Photo } from "../store/photos";
     S3 is a templating engine (not web server) so it doesn't support env.
     It's still okay, not big issue.
 */
-const API_ENDPOINT = "https://api.idontlikecamerashake.com/uploadUrl"
+const API_ENDPOINT = "https://api.idontlikecamerashake.com/uploadUrl";
 
 type GetUploadUrlReceipt = {
-    message: string,
-    uploadUrl: string,
-    imageId: string,
-    futureImageUrl: string
-}
-
-const getUploadUrl = async(photo: Photo): Promise<Either<GetUploadUrlReceipt, CustomError>> => {
-    try {
-        const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ fileType: photo.file.type })
-        });
-
-        if (!response.ok) {
-            return failure(new CustomError("TODO: couldn't reach"))
-        }
-        const data: GetUploadUrlReceipt = await response.json();
-        return success(data)
-    } catch (error) {
-        console.error('Error uploading photos:', error);
-        return failure(new CustomError(`Error uploading photos: ${error}`, ));
-    }
-}
-
-const uploadPhoto = async (uploadUrl: string, photo: Photo): Promise<Either<true, CustomError>> => {
-    try {
-        const response = await fetch(uploadUrl, {
-            method: 'PUT',
-            headers: {
-            'Content-Type': photo.file.type,
-            },
-            body: photo.file
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            return failure(new CustomError(`Failed to upload ${photo.file.name}: ${errorText}`));
-        } else {
-            return success(true);
-        }
-    } catch (error) {
-        return failure(new CustomError(`Failed to upload ${photo.file.name}: ${error}`));
-    }
+  message: string;
+  uploadUrl: string;
+  imageId: string;
+  futureImageUrl: string;
 };
 
-type uploadPhotoReceipt = {
-    imageId: string
-    futureImageUrl: string
-    timestamp: Date
-}
+const getUploadUrl = async (
+  photo: Photo,
+): Promise<Either<GetUploadUrlReceipt, CustomError>> => {
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fileType: photo.file.type }),
+    });
 
-const handlePhoto = async (photo: Photo): Promise<Either<uploadPhotoReceipt, CustomError>> => {
-    let receipt: GetUploadUrlReceipt;
-
-    const getUploadUrlResult = await getUploadUrl(photo);
-    if (getUploadUrlResult.isSuccess()) {
-        receipt = getUploadUrlResult.value;
-    } else {
-        return failure(getUploadUrlResult.error);
+    if (!response.ok) {
+      return failure(new CustomError("TODO: couldn't reach"));
     }
-
-    const uploadUrl = receipt.uploadUrl
-    const uploadPhotoResult = await uploadPhoto(uploadUrl, photo);
-    if (uploadPhotoResult.isSuccess()) {
-        const uploadPhotoReceipt: uploadPhotoReceipt = {
-            imageId: receipt.imageId,
-            futureImageUrl: receipt.futureImageUrl,
-            timestamp: new Date() 
-        }
-        return success(uploadPhotoReceipt)
-    } else {
-        return failure(uploadPhotoResult.error);
-    }
+    const data: GetUploadUrlReceipt = await response.json();
+    return success(data);
+  } catch (error) {
+    console.error("Error uploading photos:", error);
+    return failure(new CustomError(`Error uploading photos: ${error}`));
+  }
 };
 
-export {handlePhoto}
-export type {uploadPhotoReceipt};
+const uploadPhoto = async (
+  uploadUrl: string,
+  photo: Photo,
+): Promise<Either<true, CustomError>> => {
+  try {
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": photo.file.type,
+      },
+      body: photo.file,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return failure(
+        new CustomError(`Failed to upload ${photo.file.name}: ${errorText}`),
+      );
+    } else {
+      return success(true);
+    }
+  } catch (error) {
+    return failure(
+      new CustomError(`Failed to upload ${photo.file.name}: ${error}`),
+    );
+  }
+};
+
+type uploadReceipt = {
+  imageId: string;
+  futureImageUrl: string;
+  timestamp: Date;
+};
+
+const handleUpload = async (
+  photo: Photo,
+): Promise<Either<uploadReceipt, CustomError>> => {
+  let receipt: GetUploadUrlReceipt;
+
+  const getUploadUrlResult = await getUploadUrl(photo);
+  if (getUploadUrlResult.isSuccess()) {
+    receipt = getUploadUrlResult.value;
+  } else {
+    return failure(getUploadUrlResult.error);
+  }
+
+  const uploadUrl = receipt.uploadUrl;
+  const uploadPhotoResult = await uploadPhoto(uploadUrl, photo);
+  if (uploadPhotoResult.isSuccess()) {
+    const uploadPhotoReceipt: uploadReceipt = {
+      imageId: receipt.imageId,
+      futureImageUrl: receipt.futureImageUrl,
+      timestamp: new Date(),
+    };
+    return success(uploadPhotoReceipt);
+  } else {
+    return failure(uploadPhotoResult.error);
+  }
+};
+
+export { handleUpload };
+export type { uploadReceipt };
