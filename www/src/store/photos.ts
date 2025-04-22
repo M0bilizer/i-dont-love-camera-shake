@@ -70,7 +70,7 @@ const addFiles = (files: File[]) => {
         );
         if (checkImageAvailabilityResult.isSuccess()) {
           console.log(`${photo.id} is ready to download`);
-          setPhotoState(photo.id, "ready");
+          setPhotoState(photo.id, "ready", null, uploadResult.value);
         } else {
           console.log(`${photo.id} couldn't be processed!`);
           setPhotoState(
@@ -154,5 +154,17 @@ const removePhoto = (id: number): Either<true, CustomError> => {
   return success(true);
 };
 
+const getPhoto = (id: number): Either<Photo, CustomError> => {
+  const { photos } = usePhotoStore.getState();
+  const photo = photos.find((p) => p.id === id);
+
+  if (!photo) {
+    return failure(new CustomError("Cannot find photo!"));
+  }
+
+  return success(photo);
+};
+
 export default usePhotoStore;
+export { getPhoto, removePhoto };
 export type { Photo, PhotoState };

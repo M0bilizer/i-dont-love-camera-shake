@@ -1,6 +1,7 @@
 import { styled } from "styled-components";
 import PhotoUploader from "./components/PhotoUploader";
-import FileList from "./components/FileList";
+import PhotoList from "./components/PhotoList";
+import BannerText from "./components/BannerText";
 
 const Container = styled.div`
   padding: 2rem;
@@ -10,8 +11,9 @@ function App() {
   return (
     <Container className="max-w-full max-h-full">
       <Container>
+        <BannerText />
         <PhotoUploader />
-        <FileList />
+        <PhotoList />
       </Container>
     </Container>
   );
