@@ -15,7 +15,6 @@ const PhotoDisplay: React.FC<PhotoDisplayProps> = ({ photo }) => {
   const handleDownload = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (photo.state === "ready" && photo.uploadReceipt?.futureImageUrl) {
-      console.log("help");
       downloadImage(photo.uploadReceipt.futureImageUrl, photo.file.name);
     }
   };

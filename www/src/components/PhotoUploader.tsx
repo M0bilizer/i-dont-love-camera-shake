@@ -1,31 +1,7 @@
 import React, { ChangeEvent, DragEvent } from "react";
-import styled from "styled-components";
 import CustomError from "../types/errors";
 import { validateForUpload } from "../utils/validate";
 import usePhotoStore from "../store/photos";
-
-const Container = styled.div`
-  text-align: center;
-  cursor: pointer;
-  padding: 2rem;
-  margin-bottom: 0;
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #ccc;
-  width: 300px;
-  height: 200px;
-`;
-
-const ErrorBox = styled.div`
-  background-color: #f8d7da;
-  border: 1px solid #f5c2c7;
-  color: #721c24;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-`;
 
 const ImageUploadBox: React.FC = () => {
   const { addFiles } = usePhotoStore();
@@ -70,8 +46,13 @@ const ImageUploadBox: React.FC = () => {
   return (
     <div className="flex justify-center items-center">
       <div className="flex flex-col gap-2 justify-center items-center">
-        {errorMessage && <ErrorBox>{errorMessage}</ErrorBox>}
-        <Container
+        {errorMessage && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            {errorMessage}
+          </div>
+        )}
+        <div
+          className="text-center cursor-pointer p-8 mb-0 min-h-[100px] flex items-center justify-center border-2 border-dashed border-gray-300 w-[300px] h-[200px]"
           onClick={handleClick}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -81,11 +62,11 @@ const ImageUploadBox: React.FC = () => {
             type="file"
             id="fileInput"
             accept="image/*"
-            style={{ display: "none" }}
+            className="hidden"
             onChange={handleFileInputChange}
             multiple
           />
-        </Container>
+        </div>
       </div>
     </div>
   );
