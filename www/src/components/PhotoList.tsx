@@ -9,8 +9,8 @@ const PhotoList: React.FC = () => {
   });
 
   return (
-    <div className="p-10">
-      <div className="flex flex-col gap-2 px-72">
+    <div className="p-2 sm:p-10 flex justify-center items-center">
+      <div className="w-auto inline-grid grid-cols-1 gap-2">
         {photos.map((photo, index) => (
           <PhotoDisplay key={index} photo={photo} />
         ))}
