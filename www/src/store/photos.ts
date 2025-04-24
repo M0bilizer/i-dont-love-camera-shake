@@ -4,47 +4,55 @@ import CustomError from "../types/errors";
 import { handleUpload, uploadReceipt } from "../utils/uploadPhotos";
 import { checkImageAvailability } from "../utils/downloadPhotos";
 
+enum PhotoStatus {
+  Uploading = "uploading",
+  Processing = "processing",
+  Ready = "ready",
+  UploadingError = "uploadingError",
+  PollingError = "pollingError",
+}
+
 type Photo = {
   id: number;
   file: File;
-  state: "uploading" | "processing" | "ready" | "error";
+  state: PhotoStatus;
   message: string | null;
   uploadReceipt: uploadReceipt | null;
 };
 
-type PhotoState = {
+type PhotoStore = {
   photos: Photo[];
   addFiles: (files: File[]) => void;
 };
 
 //This only exist to shut ESLint up
-type SetPhotoState = {
+type SetPhotoStore = {
   (
     partial:
-      | PhotoState
-      | Partial<PhotoState>
-      | ((state: PhotoState) => PhotoState | Partial<PhotoState>),
+      | PhotoStore
+      | Partial<PhotoStore>
+      | ((state: PhotoStore) => PhotoStore | Partial<PhotoStore>),
     replace?: false,
   ): void;
   (
-    state: PhotoState | ((state: PhotoState) => PhotoState),
+    state: PhotoStore | ((state: PhotoStore) => PhotoStore),
     replace: true,
   ): void;
 };
 
 const addFiles = (files: File[]) => {
-  return (set: SetPhotoState): void => {
+  return (set: SetPhotoStore): void => {
     const photos: Photo[] = [];
     files.forEach((file) => {
       const photo: Photo = {
         id: generateId(),
         file: file,
-        state: "uploading",
+        state: PhotoStatus.Uploading,
         message: null,
         uploadReceipt: null,
       };
       photos.push(photo);
-      set((state: PhotoState) => ({ photos: [...state.photos, photo] }));
+      set((state: PhotoStore) => ({ photos: [...state.photos, photo] }));
     });
 
     photos.forEach((photo) => {
@@ -55,12 +63,21 @@ const addFiles = (files: File[]) => {
         if (uploadResult.isSuccess()) {
           console.log(`uploading ${photo.id} is success!`);
           uploadReceipt = uploadResult.value;
-          setPhotoState(photo.id, "processing", null, uploadResult.value);
+          setPhotoState(
+            photo.id,
+            PhotoStatus.Processing,
+            null,
+            uploadResult.value,
+          );
         } else {
           console.log(
             `uploading ${photo.id} failed, ${uploadResult.error.message}`,
           );
-          setPhotoState(photo.id, "error", uploadResult.error.message);
+          setPhotoState(
+            photo.id,
+            PhotoStatus.UploadingError,
+            uploadResult.error.message,
+          );
           return;
         }
 
@@ -70,13 +87,14 @@ const addFiles = (files: File[]) => {
         );
         if (checkImageAvailabilityResult.isSuccess()) {
           console.log(`${photo.id} is ready to download`);
-          setPhotoState(photo.id, "ready", null, uploadResult.value);
+          setPhotoState(photo.id, PhotoStatus.Ready, null, uploadResult.value);
         } else {
           console.log(`${photo.id} couldn't be processed!`);
           setPhotoState(
             photo.id,
-            "error",
+            PhotoStatus.PollingError,
             checkImageAvailabilityResult.error.message,
+            uploadResult.value,
           );
         }
         return;
@@ -86,7 +104,33 @@ const addFiles = (files: File[]) => {
   };
 };
 
-const usePhotoStore = create<PhotoState>((set) => ({
+const retryPolling = async (id: number) => {
+  const photo = getPhoto(id);
+  if (photo.isFailure()) {
+    throw "Cannot find photo!";
+  }
+  const uploadReceipt = photo.value.uploadReceipt;
+  if (uploadReceipt == null) {
+    throw "Photo should have been uploaded!";
+  }
+  setPhotoState(id, PhotoStatus.Processing, null, uploadReceipt);
+  const checkImageAvailabilityResult = await checkImageAvailability(
+    uploadReceipt.futureImageUrl,
+  );
+  if (checkImageAvailabilityResult.isSuccess()) {
+    console.log(`${id} is ready to download`);
+    setPhotoState(id, PhotoStatus.Ready, null, uploadReceipt);
+  } else {
+    console.log(`${id} couldn't be processed!`);
+    setPhotoState(
+      id,
+      PhotoStatus.PollingError,
+      checkImageAvailabilityResult.error.message,
+    );
+  }
+};
+
+const usePhotoStore = create<PhotoStore>((set) => ({
   photos: [],
   addFiles: (files) => addFiles(files)(set),
 }));
@@ -109,13 +153,13 @@ const generateId = (): number => {
 
 const setPhotoState = (
   id: number,
-  newState: "uploading" | "processing" | "ready" | "error",
+  newState: PhotoStatus,
   newMessage: string | null = null,
   newUploadReceipt: uploadReceipt | null = null,
 ): Either<true, CustomError> => {
   const { photos } = usePhotoStore.getState();
-  if (newState == "error" && newMessage == null) {
-    throw "error state should have message";
+  if (newState == PhotoStatus.UploadingError && newMessage == null) {
+    throw "uploading error state should have message";
   }
   if (newState == "processing" && newUploadReceipt == null) {
     throw "processing state should have uploadReceipt";
@@ -143,6 +187,7 @@ const setPhotoState = (
 
 const removePhoto = (id: number): Either<true, CustomError> => {
   const { photos } = usePhotoStore.getState();
+  console.log(photos);
   if (!photos.some((p) => p.id === id)) {
     return failure(new CustomError("Cannot find file!"));
   }
@@ -157,14 +202,12 @@ const removePhoto = (id: number): Either<true, CustomError> => {
 const getPhoto = (id: number): Either<Photo, CustomError> => {
   const { photos } = usePhotoStore.getState();
   const photo = photos.find((p) => p.id === id);
-
   if (!photo) {
     return failure(new CustomError("Cannot find photo!"));
   }
-
   return success(photo);
 };
 
 export default usePhotoStore;
-export { getPhoto, removePhoto };
-export type { Photo, PhotoState };
+export { getPhoto, removePhoto, retryPolling, PhotoStatus as PhotoState };
+export type { Photo, PhotoStore };

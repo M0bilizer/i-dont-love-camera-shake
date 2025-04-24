@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import usePhotoStore, { Photo, PhotoState } from "../store/photos";
+import usePhotoStore, { Photo, PhotoStore } from "../store/photos";
 import PhotoDisplay from "./PhotoDisplay";
 
 const PhotoList: React.FC = () => {
   const [photos, setPhoto] = useState<Photo[]>(usePhotoStore().photos);
-  usePhotoStore.subscribe((state: PhotoState) => {
+  usePhotoStore.subscribe((state: PhotoStore) => {
     setPhoto(state.photos);
   });
 

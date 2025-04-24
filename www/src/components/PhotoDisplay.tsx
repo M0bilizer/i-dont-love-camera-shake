@@ -1,5 +1,5 @@
 import React, { useState, useEffect, MouseEvent } from "react";
-import { Photo, removePhoto } from "../store/photos";
+import { Photo, removePhoto, retryPolling } from "../store/photos";
 import { downloadImage } from "../utils/downloadPhotos";
 import PhotoImage from "./PhotoImage";
 import PhotoDescription from "./PhotoDescription";
@@ -17,6 +17,11 @@ const PhotoDisplay: React.FC<PhotoDisplayProps> = ({ photo }) => {
     if (photo.state === "ready" && photo.uploadReceipt?.futureImageUrl) {
       downloadImage(photo.uploadReceipt.futureImageUrl, photo.file.name);
     }
+  };
+
+  const handleRetry = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    retryPolling(photo.id);
   };
 
   const handleClose = (e: MouseEvent<HTMLButtonElement>) => {
@@ -37,7 +42,11 @@ const PhotoDisplay: React.FC<PhotoDisplayProps> = ({ photo }) => {
           <PhotoImage photo={photo} imageUrl={imageUrl} />
         </div>
         <div className="justify-self-start">
-          <PhotoDescription photo={photo} handleDownload={handleDownload} />
+          <PhotoDescription
+            photo={photo}
+            handleDownload={handleDownload}
+            handleRetry={handleRetry}
+          />
         </div>
       </div>
 

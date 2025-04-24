@@ -1,5 +1,5 @@
 import { Either, failure, success } from "../types/either";
-import CustomError from "../types/errors";
+import CustomError, { PollingError } from "../types/errors";
 
 const downloadImage = async (
   url: string,
@@ -70,7 +70,7 @@ const checkImageAvailability = async (
 
       if (attempts >= maxAttempts) {
         return failure(
-          new CustomError(
+          new PollingError(
             `Failed after ${maxAttempts} attempts (last status: ${response.status})`,
           ),
         );
@@ -85,7 +85,7 @@ const checkImageAvailability = async (
     } catch (error) {
       if (attempts >= maxAttempts) {
         return failure(
-          new CustomError(
+          new PollingError(
             `Persistent network errors after ${maxAttempts} attempts`,
           ),
         );
