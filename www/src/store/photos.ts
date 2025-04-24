@@ -1,8 +1,7 @@
 import { create } from "zustand";
-import { Either, failure, success } from "../types/either";
-import CustomError from "../types/errors";
-import { handleUpload, uploadReceipt } from "../utils/uploadPhotos";
-import { checkImageAvailability } from "../utils/downloadPhotos";
+import { checkImageAvailability } from "../utils/downloadPhotosHelper.ts";
+import { generateId, setPhotoState } from "../utils/photosHelper.ts";
+import { uploadReceipt, handleUpload } from "../utils/uploadPhotosHelper.ts";
 
 enum PhotoStatus {
   Uploading = "uploading",
@@ -15,7 +14,7 @@ enum PhotoStatus {
 type Photo = {
   id: number;
   file: File;
-  state: PhotoStatus;
+  status: PhotoStatus;
   message: string | null;
   uploadReceipt: uploadReceipt | null;
 };
@@ -47,7 +46,7 @@ const addFiles = (files: File[]) => {
       const photo: Photo = {
         id: generateId(),
         file: file,
-        state: PhotoStatus.Uploading,
+        status: PhotoStatus.Uploading,
         message: null,
         uploadReceipt: null,
       };
@@ -104,110 +103,11 @@ const addFiles = (files: File[]) => {
   };
 };
 
-const retryPolling = async (id: number) => {
-  const photo = getPhoto(id);
-  if (photo.isFailure()) {
-    throw "Cannot find photo!";
-  }
-  const uploadReceipt = photo.value.uploadReceipt;
-  if (uploadReceipt == null) {
-    throw "Photo should have been uploaded!";
-  }
-  setPhotoState(id, PhotoStatus.Processing, null, uploadReceipt);
-  const checkImageAvailabilityResult = await checkImageAvailability(
-    uploadReceipt.futureImageUrl,
-  );
-  if (checkImageAvailabilityResult.isSuccess()) {
-    console.log(`${id} is ready to download`);
-    setPhotoState(id, PhotoStatus.Ready, null, uploadReceipt);
-  } else {
-    console.log(`${id} couldn't be processed!`);
-    setPhotoState(
-      id,
-      PhotoStatus.PollingError,
-      checkImageAvailabilityResult.error.message,
-    );
-  }
-};
-
 const usePhotoStore = create<PhotoStore>((set) => ({
   photos: [],
   addFiles: (files) => addFiles(files)(set),
 }));
 
-/*
- * █░█ █▀▀ █░░ █▀█ █▀▀ █▀█   █▀▀ █░█ █▄░█ █▀▀ ▀█▀ █ █▀█ █▄░█ █▀
- * █▀█ ██▄ █▄▄ █▀▀ ██▄ █▀▄   █▀░ █▄█ █░▀█ █▄▄ ░█░ █ █▄█ █░▀█ ▄█
- **/
-
-const generateId = (): number => {
-  const currentPhotos = usePhotoStore.getState().photos;
-  let newId = currentPhotos.length;
-
-  while (currentPhotos.some((photo) => photo.id === newId)) {
-    newId = newId + 1;
-  }
-
-  return newId;
-};
-
-const setPhotoState = (
-  id: number,
-  newState: PhotoStatus,
-  newMessage: string | null = null,
-  newUploadReceipt: uploadReceipt | null = null,
-): Either<true, CustomError> => {
-  const { photos } = usePhotoStore.getState();
-  if (newState == PhotoStatus.UploadingError && newMessage == null) {
-    throw "uploading error state should have message";
-  }
-  if (newState == "processing" && newUploadReceipt == null) {
-    throw "processing state should have uploadReceipt";
-  }
-
-  if (!photos.some((p) => p.id === id)) {
-    return failure(new CustomError("Cannot find file!"));
-  }
-
-  usePhotoStore.setState({
-    photos: photos.map((photo) =>
-      photo.id === id
-        ? {
-            ...photo,
-            state: newState,
-            message: newMessage,
-            uploadReceipt: newUploadReceipt,
-          }
-        : photo,
-    ),
-  });
-
-  return success(true);
-};
-
-const removePhoto = (id: number): Either<true, CustomError> => {
-  const { photos } = usePhotoStore.getState();
-  console.log(photos);
-  if (!photos.some((p) => p.id === id)) {
-    return failure(new CustomError("Cannot find file!"));
-  }
-
-  usePhotoStore.setState({
-    photos: photos.filter((photo) => photo.id !== id),
-  });
-
-  return success(true);
-};
-
-const getPhoto = (id: number): Either<Photo, CustomError> => {
-  const { photos } = usePhotoStore.getState();
-  const photo = photos.find((p) => p.id === id);
-  if (!photo) {
-    return failure(new CustomError("Cannot find photo!"));
-  }
-  return success(photo);
-};
-
 export default usePhotoStore;
-export { getPhoto, removePhoto, retryPolling, PhotoStatus as PhotoState };
+export { PhotoStatus };
 export type { Photo, PhotoStore };

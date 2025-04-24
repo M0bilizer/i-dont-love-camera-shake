@@ -9,7 +9,7 @@ const CloseButton: React.FC<CloseButtonProps> = ({ handleClose }) => {
     <button
       type="button"
       onClick={handleClose}
-      className="px-2.5 py-1 sm:px-5 sm:py-2.5 bg-red-600 text-white text-center rounded hover:bg-red-700 transition-colors"
+      className="rounded bg-red-600 px-2.5 py-1 text-center text-white transition-colors hover:bg-red-700 sm:px-5 sm:py-2.5"
     >
       X
     </button>

@@ -2,9 +2,11 @@
 
 ```
 .
-├── www                     # Frontend
-├── algorithm               # Lamda function (still TBA)
-├── dataset                 # Input and expected output (still TBA) [for reproducibility]
-├── iac                     # Infrastructure as code (still TBA) [for reproducibility]
+├── diagram                 # Draw.io diagrams that illustrate System Architecture
+├── lambda                  # Lambda function
+| └── replicate-layer       # Lambda layer
+├── old                     # Deprecated files. Ignore this
+├── www                     # React Frontend
+├── .gitignore
 └── README.md
 ```

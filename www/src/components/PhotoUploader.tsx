@@ -44,15 +44,15 @@ const ImageUploadBox: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center">
-      <div className="flex flex-col gap-2 justify-center items-center">
+    <div className="flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center gap-2">
         {errorMessage && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          <div className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
             {errorMessage}
           </div>
         )}
         <div
-          className="text-center cursor-pointer p-8 mb-0 min-h-[100px] flex items-center justify-center border-2 border-dashed border-gray-300 w-[300px] h-[200px]"
+          className="mb-0 flex h-[200px] min-h-[100px] w-[300px] cursor-pointer items-center justify-center border-2 border-dashed border-gray-300 p-8 text-center"
           onClick={handleClick}
           onDrop={handleDrop}
           onDragOver={handleDragOver}

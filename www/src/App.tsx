@@ -4,7 +4,7 @@ import BannerText from "./components/BannerText";
 
 function App() {
   return (
-    <div className="sm:p-8 p-0">
+    <div className="p-0 sm:p-8">
       <BannerText />
       <PhotoUploader />
       <PhotoList />

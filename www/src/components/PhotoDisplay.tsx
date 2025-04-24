@@ -1,9 +1,10 @@
-import React, { useState, useEffect, MouseEvent } from "react";
-import { Photo, removePhoto, retryPolling } from "../store/photos";
-import { downloadImage } from "../utils/downloadPhotos";
-import PhotoImage from "./PhotoImage";
-import PhotoDescription from "./PhotoDescription";
-import CloseButton from "./CloseButton";
+import { useState, useEffect, MouseEvent } from "react";
+import { Photo } from "../store/photos.ts";
+import { downloadImage } from "../utils/downloadPhotosHelper.ts";
+import { retryPolling, removePhoto } from "../utils/photosHelper.ts";
+import CloseButton from "./CloseButton.tsx";
+import PhotoDescription from "./PhotoDescription.tsx";
+import PhotoImage from "./PhotoImage.tsx";
 
 type PhotoDisplayProps = {
   photo: Photo;
@@ -14,7 +15,7 @@ const PhotoDisplay: React.FC<PhotoDisplayProps> = ({ photo }) => {
 
   const handleDownload = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    if (photo.state === "ready" && photo.uploadReceipt?.futureImageUrl) {
+    if (photo.status === "ready" && photo.uploadReceipt?.futureImageUrl) {
       downloadImage(photo.uploadReceipt.futureImageUrl, photo.file.name);
     }
   };
@@ -36,8 +37,8 @@ const PhotoDisplay: React.FC<PhotoDisplayProps> = ({ photo }) => {
   }, [photo.file]);
 
   return (
-    <div className="flex flex-row gap-2 justify-center items-center">
-      <div className="inline-grid p-2 grid-cols-2 gap-x-2 border border-gray-200 rounded-lg bg-white">
+    <div className="flex flex-row items-center justify-center gap-2">
+      <div className="inline-grid grid-cols-2 gap-x-2 rounded-lg border border-gray-200 bg-white p-2">
         <div className="justify-self-start">
           <PhotoImage photo={photo} imageUrl={imageUrl} />
         </div>
