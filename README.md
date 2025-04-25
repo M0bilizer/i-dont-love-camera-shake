@@ -25,6 +25,11 @@ curl -fsSL https://bun.sh/install | bash
 curl -fsSL https://bun.sh/install | bash
 ```
 
+### Windows (via Powershell):
+```powershell
+powershell -c "irm bun.sh/install.ps1|iex"
+```
+
 ## Run Locally:
 
 1. Navigate to the project directory:
