@@ -11,29 +11,35 @@
 └── README.md
 ```
 
-## Installation and Run Guide
+# Installation and Run Guide
 
-# Installation For Bun:
+## Installation For Bun:
+
+### macOS/Linux:
 ```bash
 curl -fsSL https://bun.sh/install | bash
 ```
 
+### Windows (via WSL):
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
 
-# Run Locally:
+## Run Locally:
 
 1. Navigate to the project directory:
 ```bash
 cd www
 ```
 
-3. Install dependencies:
+2. Install dependencies:
 ```bash
-npm install
+bun install
 ```
 
-4. Start the application:
+3. Start the application:
 ```bash
-npm run dev
+bun run dev
 ```
 
 ## Troubleshooting
