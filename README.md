@@ -29,6 +29,8 @@ This web application allows users to upload **blurry images** caused by camera s
 - Ananda I. Tan
 - Siddhartha M. Narasipuram
 
+<br/>
+
 ---
 
 # Testing the image processing
@@ -72,6 +74,8 @@ curl -X PUT -T "'Test Images/blurry-demo-1.png" \
 ```bash
 curl https://processed-idontlikecamerashake-com.s3.amazonaws.com/...
 ```
+
+<br/>
 
 ---
 
@@ -119,6 +123,8 @@ bun install
 bun dev
 ```
 
+<br/>
+
 ---
 
 # Running the Lambda functions
@@ -129,6 +135,8 @@ You can merely copy and paste the `.mjs` to the AWS Lambda Console to run the co
 You'll need to configure the Lambda to depend on the API Gateway.
 
 If you are more interested in just sending request to the backend. See the API documentation.
+
+<br/>
 
 ---
 
@@ -177,6 +185,8 @@ Endpoint: `GET {futureImageUrl}`
 Response:
 - Error 404 Not Found
 - 200 OK
+
+<br/>
 
 ---
 
